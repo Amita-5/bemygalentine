@@ -1,9 +1,7 @@
 export type GalentineStep =
   'hero' |
   'collage' |
-  'reasons' | // Changed from 'message'
-  'experience-choice' |
-  'quiz' |
+  'reasons' |
   'final' |
   'post-proposal-collage';
 
@@ -16,14 +14,9 @@ export interface ImageUpload {
 
 export type CollageLayout = 'grid' | 'stacked' | 'polaroid';
 
-export interface QuizQuestion {
-  id: number;
-  question: string;
-  options: string[];
-}
-
-export interface QuizResult {
-  title: string;
-  description: string;
-  image: string; // URL for illustration
+export interface ReasonCard {
+  id: string;
+  text: string;
+  emoji: string;
+  bg: string;
 }

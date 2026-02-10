@@ -16,6 +16,7 @@ import FinalProposal from './components/FinalProposal';
 import Confetti from './components/Confetti';
 import FloatingHearts from './components/FloatingHearts';
 import PostProposalCollageDisplay from './components/PostProposalCollageDisplay';
+import MusicPlayer from './components/MusicPlayer'; // Added MusicPlayer import
 
 const App: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<GalentineStep>('hero');
@@ -79,6 +80,7 @@ const App: React.FC = () => {
     <div className="relative min-h-screen">
       {showFloatingHearts && <FloatingHearts />}
       <Confetti show={showConfetti} />
+      <MusicPlayer /> {/* Added MusicPlayer to the root of the app */}
 
       <section id={HERO_SECTION_ID} ref={sectionRefs.hero} className="min-h-screen flex items-center justify-center p-4">
         <HeroSection onNext={() => handleNext('collage')} />

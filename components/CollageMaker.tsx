@@ -420,7 +420,7 @@ const CollageMaker: React.FC<CollageMakerProps> = ({ onNext }) => {
           disabled={uploadedImages.length === 0}
           icon="🎀"
         >
-          Next: Write Her a Message
+          Reasons I Chose You
         </Button>
       </div>
     </div>

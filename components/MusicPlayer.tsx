@@ -5,8 +5,13 @@ const MusicPlayer: React.FC = () => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const oscillatorRefs = useRef<OscillatorNode[]>([]);
   const gainNodeRef = useRef<GainNode | null>(null);
+  const loopTimeoutRef = useRef<number | null>(null);
 
   const stopMusic = useCallback(() => {
+    if (loopTimeoutRef.current) {
+      clearTimeout(loopTimeoutRef.current);
+      loopTimeoutRef.current = null;
+    }
     oscillatorRefs.current.forEach(osc => {
       try {
         osc.stop();
@@ -25,14 +30,20 @@ const MusicPlayer: React.FC = () => {
     const osc = audioContextRef.current.createOscillator();
     const noteGain = audioContextRef.current.createGain();
 
+    // Pure sine for that sweet, melodic indie-pop feel of 'Glue Song'
     osc.type = 'sine';
     osc.frequency.setValueAtTime(freq, startTime);
 
+    const filter = audioContextRef.current.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(1000, startTime);
+
     noteGain.gain.setValueAtTime(0, startTime);
-    noteGain.gain.linearRampToValueAtTime(volume, startTime + 0.5);
+    noteGain.gain.linearRampToValueAtTime(volume, startTime + 1.2);
     noteGain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 
-    osc.connect(noteGain);
+    osc.connect(filter);
+    filter.connect(noteGain);
     noteGain.connect(gainNodeRef.current);
 
     osc.start(startTime);
@@ -40,7 +51,7 @@ const MusicPlayer: React.FC = () => {
     oscillatorRefs.current.push(osc);
   };
 
-  const startMelody = () => {
+  const startMelody = useCallback(() => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
       gainNodeRef.current = audioContextRef.current.createGain();
@@ -53,35 +64,39 @@ const MusicPlayer: React.FC = () => {
 
     const now = audioContextRef.current.currentTime;
     
-    // A soft Cmaj7 - Fmaj7 loop
-    // Notes: C4, E4, G4, B4 (Cmaj7) -> F3, A3, C4, E4 (Fmaj7)
-    const chords = [
-      [261.63, 329.63, 392.00, 493.88], // Cmaj7
-      [174.61, 220.00, 261.63, 329.63], // Fmaj7
+    // 'Glue Song' inspired progression: G Major -> B Minor -> C Major -> C Minor
+    const glueChords = [
+      [196.00, 246.94, 293.66, 392.00], // G Major (G3, B3, D4, G4)
+      [246.94, 293.66, 369.99, 493.88], // B Minor (B3, D4, F#4, B4)
+      [261.63, 329.63, 392.00, 523.25], // C Major (C4, E4, G4, C5)
+      [261.63, 311.13, 392.00, 523.25], // C Minor (C4, Eb4, G4, C5)
     ];
 
     let time = now;
+
     const playLoop = () => {
       if (!isPlaying) return;
       
-      chords.forEach((chord, i) => {
-        chord.forEach(freq => {
-          playNote(freq, time + i * 4, 6, 0.05);
+      glueChords.forEach((chord, i) => {
+        chord.forEach((freq, noteIdx) => {
+          // Stagger notes slightly for a strumming/plucking effect
+          playNote(freq, time + i * 4 + (noteIdx * 0.1), 5, 0.015);
         });
-        // Add a tiny random sparkle note
-        if (Math.random() > 0.5) {
-            playNote(880, time + i * 4 + 2, 2, 0.02);
-        }
+
+        // Add a gentle high-pitched "sparkle" melody
+        if (i === 0) playNote(587.33, time + i * 4 + 2, 2, 0.005); // D5
+        if (i === 1) playNote(739.99, time + i * 4 + 2, 2, 0.005); // F#5
+        if (i === 2) playNote(659.25, time + i * 4 + 2, 2, 0.005); // E5
+        if (i === 3) playNote(622.25, time + i * 4 + 2, 2, 0.005); // Eb5
       });
 
-      time += 8;
-      // Schedule next loop before this one ends
-      const timeout = (time - audioContextRef.current!.currentTime - 2) * 1000;
-      setTimeout(playLoop, Math.max(0, timeout));
+      time += 16;
+      const timeRemaining = (time - audioContextRef.current!.currentTime - 2) * 1000;
+      loopTimeoutRef.current = window.setTimeout(playLoop, Math.max(0, timeRemaining));
     };
 
     playLoop();
-  };
+  }, [isPlaying]);
 
   useEffect(() => {
     if (isPlaying) {
@@ -90,21 +105,22 @@ const MusicPlayer: React.FC = () => {
       stopMusic();
     }
     return () => stopMusic();
-  }, [isPlaying]);
+  }, [isPlaying, startMelody, stopMusic]);
 
   return (
-    <button
-      onClick={() => setIsPlaying(!isPlaying)}
-      className={`fixed bottom-6 right-6 z-50 p-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-110 active:scale-90 flex items-center justify-center ${
-        isPlaying ? 'bg-pink-400 text-white animate-pulse' : 'bg-white text-pink-400 border border-pink-200'
-      }`}
-      aria-label={isPlaying ? "Stop Music" : "Play Music"}
-    >
-      <span className="text-xl">{isPlaying ? '🎵' : '🔇'}</span>
-      <span className="ml-2 text-xs font-semibold hidden md:inline">
-        {isPlaying ? 'Galentine Tune On' : 'Play Theme'}
-      </span>
-    </button>
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 items-end">
+      <button
+        onClick={() => setIsPlaying(!isPlaying)}
+        className={`bg-white/80 backdrop-blur-md rounded-full shadow-lg p-4 transition-all duration-300 transform hover:scale-110 active:scale-95 border border-pink-100 flex items-center justify-center ${
+          isPlaying ? 'text-pink-500 ring-2 ring-pink-200' : 'text-gray-400'
+        }`}
+        aria-label={isPlaying ? "Stop Music" : "Play Music"}
+      >
+        <span className="text-2xl transition-transform duration-300" style={{ transform: isPlaying ? 'rotate(12deg)' : 'none' }}>
+          {isPlaying ? '🎧' : '🔇'}
+        </span>
+      </button>
+    </div>
   );
 };
 

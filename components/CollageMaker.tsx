@@ -111,19 +111,15 @@ const CollageMaker: React.FC<CollageMakerProps> = ({ onNext }) => {
     }
 
     const CANVAS_WIDTH = 800;
-    let CANVAS_HEIGHT = 600; // Default height, adjust dynamically
+    let CANVAS_HEIGHT = 600;
 
-    // Load all images first
     const loadedImages = await Promise.all(
       uploadedImages.map((imgUpload) => {
         return new Promise<HTMLImageElement | null>((resolve) => {
           const img = new Image();
-          img.crossOrigin = 'anonymous'; // For external images, if any, otherwise not strictly needed for blob URLs
+          img.crossOrigin = 'anonymous';
           img.onload = () => resolve(img);
-          img.onerror = () => {
-            console.error(`Failed to load image: ${imgUpload.previewUrl}`);
-            resolve(null);
-          };
+          img.onerror = () => resolve(null);
           img.src = imgUpload.previewUrl;
         });
       })
@@ -140,7 +136,6 @@ const CollageMaker: React.FC<CollageMakerProps> = ({ onNext }) => {
       return;
     }
 
-    // Dynamic height adjustment for stacked/polaroid
     if (selectedLayout === 'stacked') {
       CANVAS_HEIGHT = Math.max(CANVAS_HEIGHT, validLoadedImages.length * (CANVAS_WIDTH * 0.5 + 80) + 100);
     } else if (selectedLayout === 'polaroid') {
@@ -150,64 +145,54 @@ const CollageMaker: React.FC<CollageMakerProps> = ({ onNext }) => {
     canvas.width = CANVAS_WIDTH;
     canvas.height = CANVAS_HEIGHT;
 
-    // Draw cute background gradient
     const gradient = ctx.createRadialGradient(
       CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, 0,
       CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, Math.max(CANVAS_WIDTH, CANVAS_HEIGHT) / 2
     );
-    gradient.addColorStop(0, '#FFF5F7'); // Lighter pink
-    gradient.addColorStop(1, '#F0E6FA'); // Lighter purple
+    gradient.addColorStop(0, '#FFF5F7');
+    gradient.addColorStop(1, '#F0E6FA');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // Draw cutesy background elements (hearts and sparkles)
-    const cutesyElements = ['💖', '✨'];
-    const cutesyColors = ['rgba(255,192,203,0.3)', 'rgba(240,230,250,0.3)', 'rgba(255,239,213,0.3)']; // Pastel colors with transparency
-
-    for (let i = 0; i < 40; i++) { // Draw 40 cutesy elements
-      const element = cutesyElements[Math.floor(Math.random() * cutesyElements.length)];
-      const color = cutesyColors[Math.floor(Math.random() * cutesyColors.length)];
-      const size = Math.random() * 15 + 15; // 15-30px
+    for (let i = 0; i < 40; i++) {
+      const element = ['💖', '✨'][Math.floor(Math.random() * 2)];
+      const color = ['rgba(255,192,203,0.3)', 'rgba(240,230,250,0.3)', 'rgba(255,239,213,0.3)'][Math.floor(Math.random() * 3)];
+      const size = Math.random() * 15 + 15;
       const x = Math.random() * CANVAS_WIDTH;
       const y = Math.random() * CANVAS_HEIGHT;
-      const rotation = (Math.random() - 0.5) * 45 * Math.PI / 180; // +/- 45 degrees in radians
+      const rotation = (Math.random() - 0.5) * 45 * Math.PI / 180;
 
       ctx.save();
       ctx.translate(x, y);
       ctx.rotate(rotation);
-      ctx.font = `${size}px Pacifico`; // Use Pacifico for cutesy elements
+      ctx.font = `${size}px Pacifico`;
       ctx.fillStyle = color;
       ctx.fillText(element, 0, 0);
       ctx.restore();
     }
 
-    // Set main text styles (for captions)
     ctx.font = '20px Quicksand';
-    ctx.fillStyle = '#4A5568'; // A dark gray for text
+    ctx.fillStyle = '#4A5568';
     ctx.textAlign = 'center';
 
     const IMAGE_MARGIN = 20;
     const POLAROID_PADDING = 15;
-    const POLAROID_WIDTH = 250; // Fixed width for polaroids on canvas
-    const POLAROID_HEIGHT = 200; // Fixed height for image area in polaroid
+    const POLAROID_WIDTH = 250;
+    const POLAROID_HEIGHT = 200;
     const CAPTION_FONT_SIZE = 16;
-    // const STICKER_FONT_SIZE = 20; // Not directly used in canvas drawing, handled in caption
 
     if (selectedLayout === 'grid') {
       const imagesPerRow = validLoadedImages.length === 1 ? 1 : (validLoadedImages.length === 2 || validLoadedImages.length === 4 ? 2 : 3);
       const cellWidth = (CANVAS_WIDTH - IMAGE_MARGIN * (imagesPerRow + 1)) / imagesPerRow;
-      const cellHeight = cellWidth * 0.75; // Maintain aspect ratio approximately
+      const cellHeight = cellWidth * 0.75;
 
       validLoadedImages.forEach((imgUpload, i) => {
         if (!imgUpload.loadedImage) return;
-
         const row = Math.floor(i / imagesPerRow);
         const col = i % imagesPerRow;
         const x = IMAGE_MARGIN + col * (cellWidth + IMAGE_MARGIN);
         const y = IMAGE_MARGIN + row * (cellHeight + IMAGE_MARGIN);
-
         ctx.drawImage(imgUpload.loadedImage, x, y, cellWidth, cellHeight);
-        
         if (imgUpload.caption) {
           ctx.font = `${CAPTION_FONT_SIZE}px Quicksand`;
           ctx.fillStyle = '#4A5568';
@@ -217,14 +202,11 @@ const CollageMaker: React.FC<CollageMakerProps> = ({ onNext }) => {
     } else if (selectedLayout === 'stacked') {
       validLoadedImages.forEach((imgUpload, i) => {
         if (!imgUpload.loadedImage) return;
-
-        const imgWidth = CANVAS_WIDTH * 0.7; // 70% of canvas width
+        const imgWidth = CANVAS_WIDTH * 0.7;
         const imgHeight = imgWidth * (imgUpload.loadedImage.naturalHeight / imgUpload.loadedImage.naturalWidth);
         const x = (CANVAS_WIDTH - imgWidth) / 2;
-        const y = IMAGE_MARGIN + i * (imgHeight * 0.8 + IMAGE_MARGIN); // Slightly overlap
-
+        const y = IMAGE_MARGIN + i * (imgHeight * 0.8 + IMAGE_MARGIN);
         ctx.drawImage(imgUpload.loadedImage, x, y, imgWidth, imgHeight);
-
         if (imgUpload.caption) {
           ctx.font = `${CAPTION_FONT_SIZE}px Quicksand`;
           ctx.fillStyle = '#4A5568';
@@ -234,40 +216,26 @@ const CollageMaker: React.FC<CollageMakerProps> = ({ onNext }) => {
     } else if (selectedLayout === 'polaroid') {
       validLoadedImages.forEach((imgUpload, i) => {
         if (!imgUpload.loadedImage) return;
-
-        const totalPolaroidHeight = POLAROID_HEIGHT + POLAROID_PADDING * 2 + CAPTION_FONT_SIZE * 2; // Image + padding + caption
-        const x = IMAGE_MARGIN + (i % 2) * (POLAROID_WIDTH + IMAGE_MARGIN * 2); // Stagger left/right
-        const y = IMAGE_MARGIN + i * 40; // Overlap vertically
-
-        // Apply random rotation
-        const rotationAngle = (Math.random() - 0.5) * 15 * Math.PI / 180; // +/- 15 degrees in radians
-        
+        const totalPolaroidHeight = POLAROID_HEIGHT + POLAROID_PADDING * 2 + CAPTION_FONT_SIZE * 2;
+        const x = IMAGE_MARGIN + (i % 2) * (POLAROID_WIDTH + IMAGE_MARGIN * 2);
+        const y = IMAGE_MARGIN + i * 40;
+        const rotationAngle = (Math.random() - 0.5) * 15 * Math.PI / 180;
         ctx.save();
         ctx.translate(x + POLAROID_WIDTH / 2, y + totalPolaroidHeight / 2);
         ctx.rotate(rotationAngle);
         ctx.translate(-(x + POLAROID_WIDTH / 2), -(y + totalPolaroidHeight / 2));
-
-        // Draw polaroid background
         ctx.fillStyle = 'white';
-        ctx.fillRect(x, y, POLAROID_WIDTH, totalPolaroidHeight);
         ctx.shadowColor = 'rgba(0,0,0,0.3)';
         ctx.shadowBlur = 10;
-        ctx.shadowOffsetX = 3;
-        ctx.shadowOffsetY = 3;
-        ctx.fillRect(x, y, POLAROID_WIDTH, totalPolaroidHeight); // Draw again for shadow to apply
-        ctx.shadowColor = 'transparent'; // Reset shadow
-
-        // Draw image
+        ctx.fillRect(x, y, POLAROID_WIDTH, totalPolaroidHeight);
+        ctx.shadowColor = 'transparent';
         ctx.drawImage(imgUpload.loadedImage, x + POLAROID_PADDING, y + POLAROID_PADDING, POLAROID_WIDTH - POLAROID_PADDING * 2, POLAROID_HEIGHT);
-
-        // Draw caption
         if (imgUpload.caption) {
           ctx.font = `${CAPTION_FONT_SIZE}px Quicksand`;
           ctx.fillStyle = '#4A5568';
-          const captionY = y + POLAROID_PADDING + POLAROID_HEIGHT + CAPTION_FONT_SIZE + 5;
-          ctx.fillText(imgUpload.caption, x + POLAROID_WIDTH / 2, captionY, POLAROID_WIDTH - POLAROID_PADDING * 2);
+          ctx.fillText(imgUpload.caption, x + POLAROID_WIDTH / 2, y + POLAROID_PADDING + POLAROID_HEIGHT + CAPTION_FONT_SIZE + 5, POLAROID_WIDTH - POLAROID_PADDING * 2);
         }
-        ctx.restore(); // Restore context to original state (undo rotation/translation)
+        ctx.restore();
       });
     }
 
@@ -278,7 +246,6 @@ const CollageMaker: React.FC<CollageMakerProps> = ({ onNext }) => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
     setIsDownloading(false);
   }, [uploadedImages, selectedLayout]);
 
@@ -297,7 +264,7 @@ const CollageMaker: React.FC<CollageMakerProps> = ({ onNext }) => {
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
           </svg>
-          Upload 3-6 photos
+          Upload 3-6 photos (Optional)
         </label>
         <input
           id="file-upload"
@@ -317,27 +284,9 @@ const CollageMaker: React.FC<CollageMakerProps> = ({ onNext }) => {
           <div className="mb-8">
             <h3 className="text-xl font-semibold text-gray-800 mb-4">Choose a layout:</h3>
             <div className="flex justify-center gap-4">
-              <Button
-                variant={selectedLayout === 'grid' ? 'primary' : 'secondary'}
-                onClick={() => setSelectedLayout('grid')}
-                size="small"
-              >
-                Grid
-              </Button>
-              <Button
-                variant={selectedLayout === 'stacked' ? 'primary' : 'secondary'}
-                onClick={() => setSelectedLayout('stacked')}
-                size="small"
-              >
-                Stacked
-              </Button>
-              <Button
-                variant={selectedLayout === 'polaroid' ? 'primary' : 'secondary'}
-                onClick={() => setSelectedLayout('polaroid')}
-                size="small"
-              >
-                Polaroid
-              </Button>
+              <Button variant={selectedLayout === 'grid' ? 'primary' : 'secondary'} onClick={() => setSelectedLayout('grid')} size="small">Grid</Button>
+              <Button variant={selectedLayout === 'stacked' ? 'primary' : 'secondary'} onClick={() => setSelectedLayout('stacked')} size="small">Stacked</Button>
+              <Button variant={selectedLayout === 'polaroid' ? 'primary' : 'secondary'} onClick={() => setSelectedLayout('polaroid')} size="small">Polaroid</Button>
             </div>
           </div>
 
@@ -347,13 +296,11 @@ const CollageMaker: React.FC<CollageMakerProps> = ({ onNext }) => {
                 {uploadedImages.map(renderImage)}
               </div>
             )}
-
             {selectedLayout === 'stacked' && (
               <div className="flex flex-col items-center space-y-4 w-full max-w-sm">
                 {uploadedImages.map(renderImage)}
               </div>
             )}
-
             {selectedLayout === 'polaroid' && (
               <div className="relative w-full max-w-3xl h-auto min-h-[400px]">
                 {uploadedImages.map((image, index) => (
@@ -364,39 +311,15 @@ const CollageMaker: React.FC<CollageMakerProps> = ({ onNext }) => {
                       top: `${index * 20 + Math.random() * 20}px`,
                       left: `${index * 20 + Math.random() * 20}px`,
                       zIndex: uploadedImages.length - index,
-                      transform: `rotate(${(Math.random() - 0.5) * 20}deg)`, // Random slight rotation
+                      transform: `rotate(${(Math.random() - 0.5) * 20}deg)`,
                     }}
                   >
-                    <img
-                      src={image.previewUrl}
-                      alt={`Polaroid photo ${image.id}`}
-                      className="w-full h-32 object-cover mb-2"
-                    />
-                    <button
-                        onClick={() => handleRemoveImage(image.id)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 text-xs z-10"
-                        aria-label="Remove image"
-                    >
-                        ✕
-                    </button>
-                    {/* Caption input for polaroid directly on the polaroid card */}
-                    <textarea
-                        value={image.caption}
-                        onChange={(e) => handleCaptionChange(image.id, e.target.value)}
-                        placeholder="Add a caption..."
-                        className="mt-2 w-full p-1 text-xs border border-gray-200 rounded-md focus:ring-pink-300 focus:border-pink-300 resize-none"
-                        rows={1}
-                    />
+                    <img src={image.previewUrl} alt={`Polaroid photo ${image.id}`} className="w-full h-32 object-cover mb-2" />
+                    <button onClick={() => handleRemoveImage(image.id)} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 text-xs z-10">✕</button>
+                    <textarea value={image.caption} onChange={(e) => handleCaptionChange(image.id, e.target.value)} placeholder="Add a caption..." className="mt-2 w-full p-1 text-xs border border-gray-200 rounded-md focus:ring-pink-300 focus:border-pink-300 resize-none" rows={1} />
                     <div className="flex gap-1 mt-1 text-lg justify-center">
                         {['💖', '✨', '🌟', '😊'].map((sticker, idx) => (
-                            <button
-                                key={idx}
-                                onClick={() => handleStickerClick(image.id, sticker)}
-                                className="hover:scale-125 transition-transform duration-150"
-                                aria-label={`Add ${sticker} sticker`}
-                            >
-                                {sticker}
-                            </button>
+                            <button key={idx} onClick={() => handleStickerClick(image.id, sticker)} className="hover:scale-125 transition-transform duration-150">{sticker}</button>
                         ))}
                     </div>
                   </div>
@@ -417,7 +340,6 @@ const CollageMaker: React.FC<CollageMakerProps> = ({ onNext }) => {
         </Button>
         <Button
           onClick={() => onNext(uploadedImages, selectedLayout)}
-          disabled={uploadedImages.length === 0}
           icon="🎀"
         >
           Reasons I Chose You

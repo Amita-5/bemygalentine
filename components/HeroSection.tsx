@@ -12,7 +12,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onNext }) => {
         Celebrating the girls who make life brighter 💕
       </h1>
       <p className="text-lg md:text-xl text-gray-700 mb-8 animate-fade-in delay-200">
-        A little surprise made just for your bestie
+        A little surprise made just for you.
       </p>
       <Button
         onClick={onNext}
